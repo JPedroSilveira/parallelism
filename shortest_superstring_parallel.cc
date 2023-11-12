@@ -196,7 +196,7 @@ auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, 
             bestOverlap = std::make_pair(spVector[i], newOverlapValue);
         }
     }
-    
+
     return bestOverlap.first;
 }
 

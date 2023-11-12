@@ -7,7 +7,7 @@ def generate_random_string(length):
     return ''.join(random.choice(string.ascii_lowercase) for _ in range(length))
 
 # Número de strings desejado
-num_strings = 50
+num_strings = 200
 
 # Comprimento máximo para cada string
 max_length = 10
