@@ -184,7 +184,7 @@ auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, 
     std::vector<Pair<String, String>> spVector(sp.size());
     std::copy(sp.begin(), sp.end(), spVector.begin());
 
-    int i;
+    long unsigned int i;
     int newOverlapValue;
 
     #pragma omp parallel for reduction(reduceOverlap : bestOverlap) private(i, newOverlapValue) shared(spVector)
