@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <iostream>
+#include <vector>
 
 #define standard_input std::cin
 #define standard_output std::cout
