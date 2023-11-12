@@ -112,13 +112,14 @@ auto all_suffixes(const String &x) -> Set<String>
     return ss;
 }
 
-auto commom_suffix_and_prefix(const String &a, const String &b) -> String
+auto commom_suffix_and_prefix(const String &a, const String &b) -> Pair<String, Boolean>
 {
     if (_empty(a))
-        return "";
+        return std::make_pair("", true);
     if (_empty(b))
-        return "";
+        return std::make_pair("", false);
     String x = "";
+    Boolean side = true;
     for (const String &s : all_suffixes(a))
     {
         if (is_prefix(s, b) && _size(s) > _size(x))
@@ -126,19 +127,33 @@ auto commom_suffix_and_prefix(const String &a, const String &b) -> String
             x = s;
         }
     }
-    return x;
+    for (const String &s : all_suffixes(b))
+    {
+        if (is_prefix(s, a) && _size(s) > _size(x))
+        {
+            side = false;
+            x = s;
+        }
+    }
+    return std::make_pair(x, side);
 }
 
 inline auto
 overlap_value(const String &s, const String &t) -> SizeType<String>
 {
-    return _size(commom_suffix_and_prefix(s, t));
+    return _size(commom_suffix_and_prefix(s, t).first);
 }
 
 auto overlap(const String &s, const String &t) -> String
 {
-    String c = commom_suffix_and_prefix(s, t);
-    return s + remove_prefix(t, _size(c));
+    Pair<String, Boolean> result = commom_suffix_and_prefix(s, t);
+    String c = result.first;
+    Boolean side = result.second;
+    if (side) {
+        return s + remove_prefix(t, _size(c));
+    } else {
+        return t + remove_prefix(s, _size(c));
+    }
 }
 
 inline auto
@@ -154,14 +169,17 @@ auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
 {
     Set<Pair<String, String>> x;
 
-    for (const String &s1 : ss)
+    for (int e = 0; e < _size(ss); e++)
     {
-        for (const String &s2 : ss)
+        const String &s1 = *std::next(ss.begin(), e);
+        for (int i = e; i < _size(ss); i++) 
         {
+            const String &s2 = *std::next(ss.begin(), i);
             if (s1 != s2)
                 x.insert(make_pair(s1, s2));
         }
     }
+
     return x;
 }
 

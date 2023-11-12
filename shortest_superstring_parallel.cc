@@ -165,17 +165,35 @@ auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
     return x;
 }
 
+void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, String>, int> &in) {
+  if (in.second > inout.second) {
+    inout.first = in.first;
+    inout.second = in.second;
+  }
+}
+
+#pragma omp declare reduction(reduceOverlap : Pair<Pair<String, String>, int> : reduceOverlap(omp_out, omp_in)) \
+    initializer (omp_priv=omp_orig)
+
 auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, String>
 {
     Pair<String, String> x = first_element(sp);
-    for (const Pair<String, String> &p : sp)
+    Pair<Pair<String, String>, int> bestOverlap = std::make_pair(x, overlap_value(x.first, x.second));
+
+    std::vector<Pair<String, String>> spVector(sp.size());
+    std::copy(sp.begin(), sp.end(), spVector.begin());
+
+    #pragma omp parallel for reduction(reduceOverlap : bestOverlap)
+    for (int i = 0; i < spVector.size(); i++) //const Pair<String, String> &p : sp
     {
-        if (overlap_value(p.first, p.second) > overlap_value(x.first, x.second))
+        int newOverlapValue = overlap_value(spVector[i].first, spVector[i].second);
+        if (newOverlapValue > bestOverlap.second)
         {
-            x = p;
+            bestOverlap = std::make_pair(spVector[i], newOverlapValue);
         }
     }
-    return x;
+    
+    return bestOverlap.first;
 }
 
 auto pair_of_strings_with_highest_overlap_value(const Set<String> &ss) -> Pair<String, String>
