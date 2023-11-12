@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <iostream>
+#include <vector>
 
 #define standard_input std::cin
 #define standard_output std::cout
@@ -183,10 +184,13 @@ auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, 
     std::vector<Pair<String, String>> spVector(sp.size());
     std::copy(sp.begin(), sp.end(), spVector.begin());
 
-    #pragma omp parallel for reduction(reduceOverlap : bestOverlap)
-    for (int i = 0; i < spVector.size(); i++) //const Pair<String, String> &p : sp
+    int i;
+    int newOverlapValue;
+
+    #pragma omp parallel for reduction(reduceOverlap : bestOverlap) private(i, newOverlapValue) shared(spVector)
+    for (i = 0; i < spVector.size(); i++) //const Pair<String, String> &p : sp
     {
-        int newOverlapValue = overlap_value(spVector[i].first, spVector[i].second);
+        newOverlapValue = overlap_value(spVector[i].first, spVector[i].second);
         if (newOverlapValue > bestOverlap.second)
         {
             bestOverlap = std::make_pair(spVector[i], newOverlapValue);
