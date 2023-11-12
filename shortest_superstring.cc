@@ -5,6 +5,7 @@
 #include <utility>
 #include <iostream>
 #include <vector>
+#include <omp.h>
 
 #define standard_input std::cin
 #define standard_output std::cout
@@ -236,9 +237,15 @@ write_string_to_standard_ouput(const String &s) -> void
 
 auto main(int argc, char const *argv[]) -> int
 {
+    double start_time, end_time;
+    
     Set<String> ss = read_strings_from_standard_input();
 
+    start_time = omp_get_wtime();
     String result = shortest_superstring(ss);
+    end_time = omp_get_wtime();
+
+    printf("Tempo decorrido: %f segundos\n", end_time - start_time);
 
     write_string_to_standard_ouput(result);
 

@@ -8,7 +8,7 @@ clean:
 	rm -rf shsup
 
 shsup: shortest_superstring.cc
-	g++-13 -std=c++11 -pg -Wall -O3 shortest_superstring.cc -o shsup
+	clang++ -std=c++11 -pg -Wall -O3 -fopenmp shortest_superstring.cc -o shsup
 
 shsupparallel_mac: shortest_superstring.cc
 	clang++ -std=c++11 -pg -Wall -O3 -fopenmp shortest_superstring_parallel.cc -o shsupparallel
