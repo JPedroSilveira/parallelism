@@ -7,10 +7,12 @@
 #include <vector>
 #include <omp.h>
 #include <cmath>
+#include <algorithm>
 
 #define standard_input std::cin
 #define standard_output std::cout
-#define num_threads 4
+
+#define NUM_OF_THREADS 4
 
 using Boolean = bool;
 using Size = std::size_t;
@@ -154,19 +156,42 @@ pop_two_elements_and_push_overlap(Set<String> &ss, const Pair<String, String> &p
     return ss;
 }
 
+void reducePairs(Set<Pair<String, String>> &inout, Set<Pair<String, String>> &in) {
+  inout.insert(in.begin(), in.end());
+}
+
+#pragma omp declare reduction(reducePairs : Set<Pair<String, String>> : reducePairs(omp_out, omp_in)) \
+    initializer (omp_priv=omp_orig)
+
 auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
 {
-    Set<Pair<String, String>> x;
+    std::vector<String> ssVector(ss.size());
+    std::copy(ss.begin(), ss.end(), ssVector.begin());
 
-    for (const String &s1 : ss)
-    {
-        for (const String &s2 : ss)
+    Set<Pair<String, String>> pairs;
+
+    long unsigned int blockNum;
+    int i, j, blockInit, blockEnd;
+    int blockSize = ceil((double) ssVector.size() / (double) NUM_OF_THREADS);
+    int numberOfBlocks = ceil((double) ssVector.size() / (double) blockSize);
+
+    #pragma omp parallel for reduction(reducePairs : pairs) private(blockNum, i, j, blockInit, blockEnd) shared(ssVector, numberOfBlocks, blockSize)
+    for (blockNum = 0; blockNum < numberOfBlocks; blockNum++) {
+        blockInit = blockNum * blockSize;
+        blockEnd = std::min((blockNum + 1) * blockSize, ssVector.size());
+
+        for (i = blockInit; i < blockEnd; i++)
         {
-            if (s1 != s2)
-                x.insert(make_pair(s1, s2));
+            for (j = 0; j < ssVector.size(); j++)
+            {
+                if (i != j) {
+                    pairs.insert(make_pair(ssVector[i], ssVector[j]));
+                }
+            }
         }
     }
-    return x;
+
+    return pairs;
 }
 
 void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, String>, int> &in) {
@@ -181,22 +206,29 @@ void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, Str
 
 auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, String>
 {
-    Pair<String, String> x = first_element(sp);
-    Pair<Pair<String, String>, int> bestOverlap = std::make_pair(x, overlap_value(x.first, x.second));
+    Pair<String, String> firstElement = first_element(sp);
+    Pair<Pair<String, String>, int> bestOverlap = std::make_pair(firstElement, overlap_value(firstElement.first, firstElement.second));
 
     std::vector<Pair<String, String>> spVector(sp.size());
     std::copy(sp.begin(), sp.end(), spVector.begin());
 
-    long unsigned int i;
-    int newOverlapValue;
+    long unsigned int blockNum;
+    int i, newOverlapValue, blockInit, blockEnd;
+    int blockSize = ceil((double) spVector.size() / (double) NUM_OF_THREADS);
+    int numberOfBlocks = ceil((double) spVector.size() / (double) blockSize);
 
-    #pragma omp parallel for reduction(reduceOverlap : bestOverlap) private(i, newOverlapValue) shared(spVector)
-    for (i = 0; i < spVector.size(); i++)
-    {
-        newOverlapValue = overlap_value(spVector[i].first, spVector[i].second);
-        if (newOverlapValue > bestOverlap.second)
+    #pragma omp parallel for reduction(reduceOverlap : bestOverlap) private(blockNum, i, newOverlapValue, blockInit, blockEnd) shared(spVector, numberOfBlocks, blockSize)
+    for (blockNum = 0; blockNum < numberOfBlocks; blockNum++) {
+        blockInit = blockNum * blockSize;
+        blockEnd = std::min((blockNum + 1) * blockSize, spVector.size());
+
+        for (i = blockInit; i < blockEnd; i++)
         {
-            bestOverlap = std::make_pair(spVector[i], newOverlapValue);
+            newOverlapValue = overlap_value(spVector[i].first, spVector[i].second);
+            if (newOverlapValue > bestOverlap.second)
+            {
+                bestOverlap = std::make_pair(spVector[i], newOverlapValue);
+            }
         }
     }
 
@@ -261,10 +293,10 @@ write_string_to_standard_ouput(const String &s) -> void
 auto main(int argc, char const *argv[]) -> int
 {
     double start_time, end_time;
+
+    omp_set_num_threads(NUM_OF_THREADS);
     
     Set<String> ss = read_strings_from_standard_input();
-
-    omp_set_num_threads(num_threads);
 
     start_time = omp_get_wtime();
     String result = shortest_superstring(ss);

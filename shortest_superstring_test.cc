@@ -6,11 +6,9 @@
 #include <iostream>
 #include <vector>
 #include <omp.h>
-#include <cmath>
 
 #define standard_input std::cin
 #define standard_output std::cout
-#define num_threads 4
 
 using Boolean = bool;
 using Size = std::size_t;
@@ -169,38 +167,23 @@ auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
     return x;
 }
 
-void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, String>, int> &in) {
-  if (in.second > inout.second) {
-    inout.first = in.first;
-    inout.second = in.second;
-  }
-}
-
-#pragma omp declare reduction(reduceOverlap : Pair<Pair<String, String>, int> : reduceOverlap(omp_out, omp_in)) \
-    initializer (omp_priv=omp_orig)
-
 auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, String>
 {
     Pair<String, String> x = first_element(sp);
-    Pair<Pair<String, String>, int> bestOverlap = std::make_pair(x, overlap_value(x.first, x.second));
 
     std::vector<Pair<String, String>> spVector(sp.size());
     std::copy(sp.begin(), sp.end(), spVector.begin());
 
-    long unsigned int i;
-    int newOverlapValue;
-
-    #pragma omp parallel for reduction(reduceOverlap : bestOverlap) private(i, newOverlapValue) shared(spVector)
-    for (i = 0; i < spVector.size(); i++)
+    for (int i = spVector.size() - 1; i >= 0; i--)
     {
-        newOverlapValue = overlap_value(spVector[i].first, spVector[i].second);
-        if (newOverlapValue > bestOverlap.second)
+        const Pair<String, String> &p = spVector[i];
+        if (overlap_value(p.first, p.second) > overlap_value(x.first, x.second))
         {
-            bestOverlap = std::make_pair(spVector[i], newOverlapValue);
+            x = p;
         }
     }
 
-    return bestOverlap.first;
+    return x;
 }
 
 auto pair_of_strings_with_highest_overlap_value(const Set<String> &ss) -> Pair<String, String>
@@ -264,13 +247,12 @@ auto main(int argc, char const *argv[]) -> int
     
     Set<String> ss = read_strings_from_standard_input();
 
-    omp_set_num_threads(num_threads);
-
     start_time = omp_get_wtime();
     String result = shortest_superstring(ss);
     end_time = omp_get_wtime();
 
     printf("Tempo decorrido: %f segundos\n", end_time - start_time);
+
     write_string_to_standard_ouput(result);
 
     return 0;

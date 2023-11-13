@@ -10,8 +10,8 @@ clean:
 shsup: shortest_superstring.cc
 	clang++ -std=c++11 -pg -Wall -O3 -fopenmp shortest_superstring.cc -o shsup
 
-shsupparallel_mac: shortest_superstring.cc
+shsupparallel: shortest_superstring_parallel.cc
 	clang++ -std=c++11 -pg -Wall -O3 -fopenmp shortest_superstring_parallel.cc -o shsupparallel
 
-shsupparallel_lin: shortest_superstring.cc
-	g++-13 -std=c++11 -pg -Wall -O3 -fopenmp shortest_superstring_parallel.cc -o shsupparallel
+shsupparallelblock: shortest_superstring_parallel_block.cc
+	clang++ -std=c++11 -pg -Wall -O3 -fopenmp shortest_superstring_parallel_block.cc -o shsupparallelblock
