@@ -263,7 +263,6 @@ auto main(int argc, char const *argv[]) -> int
     double start_time, end_time;
     
     Set<String> ss = read_strings_from_standard_input();
-
     omp_set_num_threads(num_threads);
 
     start_time = omp_get_wtime();

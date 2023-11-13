@@ -16,12 +16,12 @@ for VALOR in "${VALORES[@]}"; do
         # Executa o programa original e salva a análise no arquivo correspondente
         rm gmon.out
         $EXECUTAVEL_ORIGINAL < $ARQUIVO_INPUT
-        gprof $EXECUTAVEL_ORIGINAL gmon.out > "analise-original${VALOR}.txt"
+        gprof $EXECUTAVEL_ORIGINAL gmon.out > "./gprof/analise-original${VALOR}.txt"
 
         # Executa o programa paralelo e salva a análise no arquivo correspondente
         rm gmon.out
         $EXECUTAVEL_PARALLEL < $ARQUIVO_INPUT
-        gprof $EXECUTAVEL_PARALLEL gmon.out > "analise-parallel${VALOR}.txt"
+        gprof $EXECUTAVEL_PARALLEL gmon.out > "./gprof/analise-parallel${VALOR}.txt"
     else
         echo "Arquivo de entrada '$ARQUIVO_INPUT' não encontrado."
     fi
