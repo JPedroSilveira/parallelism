@@ -10,7 +10,7 @@
 
 #define standard_input std::cin
 #define standard_output std::cout
-//#define num_threads 4
+#define num_threads 4
 
 using Boolean = bool;
 using Size = std::size_t;
@@ -187,16 +187,9 @@ auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, 
     std::vector<Pair<String, String>> spVector(sp.size());
     std::copy(sp.begin(), sp.end(), spVector.begin());
 
-    long unsigned int i, num_threads;
+    long unsigned int i;
     int newOverlapValue;
-
-    num_threads = ceil(spVector.size()/50000);
-    if (num_threads == 0){
-        num_threads = 1;
-    }
-    //std::cout << num_threads << std::endl;
-
-    omp_set_num_threads(num_threads);
+    
 
     #pragma omp parallel for reduction(reduceOverlap : bestOverlap) private(i, newOverlapValue) shared(spVector)
     for (i = 0; i < spVector.size(); i++) //const Pair<String, String> &p : sp
@@ -271,6 +264,8 @@ auto main(int argc, char const *argv[]) -> int
     double start_time, end_time;
     
     Set<String> ss = read_strings_from_standard_input();
+
+    omp_set_num_threads(num_threads);
 
     start_time = omp_get_wtime();
     String result = shortest_superstring(ss);
