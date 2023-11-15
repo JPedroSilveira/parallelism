@@ -64,6 +64,9 @@
     "algorithm": "cpp",
     "chrono": "cpp",
     "random": "cpp",
-    "format": "cpp"
+    "format": "cpp",
+    "utility": "cpp",
+    "functional": "cpp",
+    "*.tcc": "cpp"
   }
 }

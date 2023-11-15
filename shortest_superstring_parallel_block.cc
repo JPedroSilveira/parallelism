@@ -12,7 +12,7 @@
 #define standard_input std::cin
 #define standard_output std::cout
 
-#define NUM_OF_THREADS 4
+#define NUM_OF_THREADS 200
 
 using Boolean = bool;
 using Size = std::size_t;
@@ -156,42 +156,19 @@ pop_two_elements_and_push_overlap(Set<String> &ss, const Pair<String, String> &p
     return ss;
 }
 
-void reducePairs(Set<Pair<String, String>> &inout, Set<Pair<String, String>> &in) {
-  inout.insert(in.begin(), in.end());
-}
-
-#pragma omp declare reduction(reducePairs : Set<Pair<String, String>> : reducePairs(omp_out, omp_in)) \
-    initializer (omp_priv=omp_orig)
-
 auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
 {
-    std::vector<String> ssVector(ss.size());
-    std::copy(ss.begin(), ss.end(), ssVector.begin());
+    Set<Pair<String, String>> x;
 
-    Set<Pair<String, String>> pairs;
-
-    long unsigned int blockNum;
-    int i, j, blockInit, blockEnd;
-    int blockSize = ceil((double) ssVector.size() / (double) NUM_OF_THREADS);
-    int numberOfBlocks = ceil((double) ssVector.size() / (double) blockSize);
-
-    #pragma omp parallel for reduction(reducePairs : pairs) private(blockNum, i, j, blockInit, blockEnd) shared(ssVector, numberOfBlocks, blockSize)
-    for (blockNum = 0; blockNum < numberOfBlocks; blockNum++) {
-        blockInit = blockNum * blockSize;
-        blockEnd = std::min((blockNum + 1) * blockSize, ssVector.size());
-
-        for (i = blockInit; i < blockEnd; i++)
+    for (const String &s1 : ss)
+    {
+        for (const String &s2 : ss)
         {
-            for (j = 0; j < ssVector.size(); j++)
-            {
-                if (i != j) {
-                    pairs.insert(make_pair(ssVector[i], ssVector[j]));
-                }
-            }
+            if (s1 != s2)
+                x.insert(make_pair(s1, s2));
         }
     }
-
-    return pairs;
+    return x;
 }
 
 void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, String>, int> &in) {
@@ -215,9 +192,9 @@ auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, 
     long unsigned int blockNum;
     int i, newOverlapValue, blockInit, blockEnd;
     int blockSize = ceil((double) spVector.size() / (double) NUM_OF_THREADS);
-    int numberOfBlocks = ceil((double) spVector.size() / (double) blockSize);
+    long unsigned int numberOfBlocks = ceil((double) spVector.size() / (double) blockSize);
 
-    #pragma omp parallel for reduction(reduceOverlap : bestOverlap) private(blockNum, i, newOverlapValue, blockInit, blockEnd) shared(spVector, numberOfBlocks, blockSize)
+    #pragma omp parallel for schedule(dynamic, NUM_OF_THREADS) reduction(reduceOverlap : bestOverlap) private(blockNum, i, newOverlapValue, blockInit, blockEnd) shared(spVector, numberOfBlocks, blockSize)
     for (blockNum = 0; blockNum < numberOfBlocks; blockNum++) {
         blockInit = blockNum * blockSize;
         blockEnd = std::min((blockNum + 1) * blockSize, spVector.size());

@@ -121,8 +121,12 @@ auto commom_suffix_and_prefix(const String &a, const String &b) -> String
     if (_empty(b))
         return "";
     String x = "";
+    // Para cada possível prefixo da palavra dada como
+    // primeiro parâmetro
     for (const String &s : all_suffixes(a))
     {
+        // Verifica se ele é um prefixo para
+        // a palavra dada como segundo parâmetro 
         if (is_prefix(s, b) && _size(s) > _size(x))
         {
             x = s;
@@ -169,10 +173,19 @@ auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
 
 auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, String>
 {
+    // Inicia x com o primeiro par
+    // com o objetivo de armazenar o par
+    // com a maior sobreposição que será escolhido 
+    // ao final do laço
     Pair<String, String> x = first_element(sp);
     for (const Pair<String, String> &p : sp)
     {
-        if (overlap_value(p.first, p.second) > overlap_value(x.first, x.second))
+        // Compara se o par atual tem uma sobreposição
+        // maior que o atual par escolhido
+        if (
+            overlap_value(p.first, p.second) 
+            > 
+            overlap_value(x.first, x.second))
         {
             x = p;
         }
@@ -191,9 +204,16 @@ auto shortest_superstring(Set<String> t) -> String
     {
         return "";
     }
+    // Enquanto houverem mais de 2 palavras
     while (at_least_two_elements_in(t))
     {
-        t = pop_two_elements_and_push_overlap(t, pair_of_strings_with_highest_overlap_value(t));
+        // 1. Encontra o par de palavras com maior sobreposição
+        // 2. Remove ambas as palavras do conjunto 
+        //    e adiciona sua sobreposição 
+        t = pop_two_elements_and_push_overlap(
+            t, 
+            pair_of_strings_with_highest_overlap_value(t)
+        );
     }
     return first_element(t);
 }

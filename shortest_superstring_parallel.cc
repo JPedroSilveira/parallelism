@@ -10,7 +10,7 @@
 
 #define standard_input std::cin
 #define standard_output std::cout
-#define num_threads 4
+#define num_threads 800
 
 using Boolean = bool;
 using Size = std::size_t;
