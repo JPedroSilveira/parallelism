@@ -105,17 +105,6 @@ remove_prefix(const String &x, SizeType<String> n) -> String
     return x;
 }
 
-auto all_suffixes(const String &x) -> Set<String>
-{
-    Set<String> ss;
-    SizeType<String> n = _size(x);
-    for (int i = n - 1; i > 0; i--)
-    {
-        ss.insert(x.substr(i));
-    }
-    return ss;
-}
-
 auto commom_suffix_and_prefix(const String &a, const String &b) -> String
 {
     if (_empty(a))
@@ -175,12 +164,15 @@ void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, Str
 
 auto pair_of_strings_with_highest_overlap_value(const Set<String> &ss) -> Pair<String, String>
 {
+    // Converte o conjunto em lista para facilitar sua manipulação
     std::vector<String> ssVector(ss.size());
     std::copy(ss.begin(), ss.end(), ssVector.begin());
 
     String first = ssVector[0];
     String second = ssVector[1];
 
+    // Define as primeiras duas palavras da lista como melhor
+    // sobreposição inicial
     Pair<Pair<String, String>, int> biggestOverlap = std::make_pair(
         std::make_pair(first, second), 
         overlap_value(first, second)
@@ -189,7 +181,11 @@ auto pair_of_strings_with_highest_overlap_value(const Set<String> &ss) -> Pair<S
     long unsigned int i, j;
     int newOverlapValue;
 
-    #pragma omp parallel for reduction(reduceOverlap : biggestOverlap) private(i, j, newOverlapValue) shared(ssVector)
+    // Paraleliza o laço externo, sendo que cada iteração irá calcular
+    // a sobreposição para todos os pares que comecem com a palavra i
+    #pragma omp parallel for \
+        reduction(reduceOverlap : biggestOverlap) \
+        private(i, j, newOverlapValue) shared(ssVector)
     for (i = 0; i < ssVector.size(); i++)
     {
         for (j = 0; j < ssVector.size(); j++)
@@ -198,7 +194,10 @@ auto pair_of_strings_with_highest_overlap_value(const Set<String> &ss) -> Pair<S
                 newOverlapValue = overlap_value(ssVector[i], ssVector[j]);
                 if (newOverlapValue > biggestOverlap.second)
                 {
-                    biggestOverlap = std::make_pair(std::make_pair(ssVector[i], ssVector[j]), newOverlapValue);
+                    biggestOverlap = std::make_pair(
+                        std::make_pair(ssVector[i], ssVector[j]), 
+                        newOverlapValue
+                    );
                 }
             }
         }

@@ -154,18 +154,34 @@ pop_two_elements_and_push_overlap(Set<String> &ss, const Pair<String, String> &p
     return ss;
 }
 
+void reducePairs(Set<Pair<String, String>> &inout, Set<Pair<String, String>> &in) {
+  inout.insert(in.begin(), in.end());
+}
+
+#pragma omp declare reduction(reducePairs : Set<Pair<String, String>> : reducePairs(omp_out, omp_in)) \
+    initializer (omp_priv=omp_orig)
+
 auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
 {
-    Set<Pair<String, String>> x;
+    std::vector<Pair<String, String>> ssVector(ss.size());
+    std::copy(ss.begin(), ss.end(), ssVector.begin());
 
-    for (const String &s1 : ss)
+    Set<Pair<String, String>> pairs;
+
+    long unsigned int i, j;
+
+    #pragma omp parallel for reduction(reducePairs : pairs) private(i, j) shared(ssVector)
+    for (i = 0; i < ssVector.size(); i++)
     {
-        for (const String &s2 : ss)
+        for (j = 0; j < ssVector.size(); j++)
         {
-            if (s1 != s2)
-                x.insert(make_pair(s1, s2));
+            if (i != j)
+            {
+                pairs.insert(make_pair(ssVector[i], ssVector[j]))
+            }
         }
     }
+
     return x;
 }
 

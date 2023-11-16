@@ -7,4 +7,4 @@
 #SBATCH --output=%x_%j.out
 #SBATCH --error=%x_%j.err
 
-./shsupopt < ./input-8000.txt
+./shsupparallelblock < ./input-500.txt

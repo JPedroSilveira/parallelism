@@ -158,17 +158,46 @@ pop_two_elements_and_push_overlap(Set<String> &ss, const Pair<String, String> &p
 
 auto all_distinct_pairs(const Set<String> &ss) -> Set<Pair<String, String>>
 {
-    Set<Pair<String, String>> x;
+    // Converte o conjunto em uma lista para leitura por índice
+    std::vector<String> ssVector(ss.size());
+    std::copy(ss.begin(), ss.end(), ssVector.begin());
 
-    for (const String &s1 : ss)
-    {
-        for (const String &s2 : ss)
+    Set<Pair<String, String>> pairs;
+    Set<Pair<String, String>> blockPairs;
+
+    long unsigned int blockNum;
+    long unsigned int j;
+    int i, blockInit, blockEnd;
+
+    // Divide a quantidade de blocos baseado no número de palavras e de threads
+    int blockSize = ceil((double) ssVector.size() / (double) NUM_OF_THREADS);
+
+    #pragma omp parallel for \
+        private(blockPairs, blockNum, i, j, blockInit, blockEnd) \
+        shared(pairs, ssVector, blockSize)
+    for (blockNum = 0; blockNum < NUM_OF_THREADS; blockNum++) {
+
+        blockInit = blockNum * blockSize;
+        blockEnd = std::min((blockNum + 1) * blockSize, ssVector.size());
+
+        // Executa o laço completo baseado no tamanho de elementos de cada bloco
+        for (i = blockInit; i < blockEnd; i++)
         {
-            if (s1 != s2)
-                x.insert(make_pair(s1, s2));
+            for (j = 0; j < ssVector.size(); j++)
+            {
+                if (i != j) {
+                    blockPairs.insert(make_pair(ssVector[i], ssVector[j]));
+                }
+            }
+        }
+
+        #pragma omp critical
+        {
+            pairs.insert(blockPairs.begin(), blockPairs.end());
         }
     }
-    return x;
+
+    return pairs;
 }
 
 void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, String>, int> &in) {
@@ -183,28 +212,46 @@ void reduceOverlap(Pair<Pair<String, String>, int> &inout, Pair<Pair<String, Str
 
 auto highest_overlap_value(const Set<Pair<String, String>> &sp) -> Pair<String, String>
 {
+    // Define o primeiro elemento como melhor par
     Pair<String, String> firstElement = first_element(sp);
-    Pair<Pair<String, String>, int> bestOverlap = std::make_pair(firstElement, overlap_value(firstElement.first, firstElement.second));
+    Pair<Pair<String, String>, int> bestOverlap = 
+        std::make_pair(firstElement, overlap_value(firstElement.first, firstElement.second));
 
+    Pair<Pair<String, String>, int> blockBestOverlap = 
+        std::make_pair(firstElement, overlap_value(firstElement.first, firstElement.second));
+
+    // Converte o conjunto em uma lista para leitura por índice
     std::vector<Pair<String, String>> spVector(sp.size());
     std::copy(sp.begin(), sp.end(), spVector.begin());
 
     long unsigned int blockNum;
     int i, newOverlapValue, blockInit, blockEnd;
+
+    // Divide a quantidade de blocos baseado no número de pares e de threads
     int blockSize = ceil((double) spVector.size() / (double) NUM_OF_THREADS);
-    long unsigned int numberOfBlocks = ceil((double) spVector.size() / (double) blockSize);
 
-    #pragma omp parallel for schedule(dynamic, NUM_OF_THREADS) reduction(reduceOverlap : bestOverlap) private(blockNum, i, newOverlapValue, blockInit, blockEnd) shared(spVector, numberOfBlocks, blockSize)
-    for (blockNum = 0; blockNum < numberOfBlocks; blockNum++) {
+    #pragma omp parallel for \
+        private(blockBestOverlap, blockNum, i, newOverlapValue, blockInit, blockEnd) \
+        shared(bestOverlap, spVector, blockSize)
+    for (blockNum = 0; blockNum < NUM_OF_THREADS; blockNum++) {
         blockInit = blockNum * blockSize;
-        blockEnd = std::min((blockNum + 1) * blockSize, spVector.size());
+        blockEnd = std::min((blockNum + 1) * blockSize, spVector.size()); 
 
+        // Executa o laço completo baseado no tamanho de elementos de cada bloco
         for (i = blockInit; i < blockEnd; i++)
         {
             newOverlapValue = overlap_value(spVector[i].first, spVector[i].second);
             if (newOverlapValue > bestOverlap.second)
             {
-                bestOverlap = std::make_pair(spVector[i], newOverlapValue);
+                blockBestOverlap = std::make_pair(spVector[i], newOverlapValue);
+            }
+        }
+
+        #pragma omp critical 
+        {
+            if (blockBestOverlap.second > bestOverlap.second) {
+                bestOverlap.first = blockBestOverlap.first;
+                bestOverlap.second = blockBestOverlap.second;
             }
         }
     }
